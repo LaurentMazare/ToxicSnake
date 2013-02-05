@@ -38,6 +38,7 @@ public class MainActivity extends Activity implements OnGestureListener {
   }
   @Override
   public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+    gamePanel.onFling(-distanceX, -distanceY);
     return true;
   }
   @Override
@@ -46,7 +47,6 @@ public class MainActivity extends Activity implements OnGestureListener {
   }
   @Override
   public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-    gamePanel.onFling(velocityX, velocityY);
     return true;
   }
 }

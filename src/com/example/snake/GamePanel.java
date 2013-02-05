@@ -15,6 +15,8 @@ class Snake {
   LinkedList<Point> points;
   int dx;
   int dy;
+  int prev_dx;
+  int prev_dy;
   Paint paint;
 
   int width;
@@ -32,6 +34,8 @@ class Snake {
     for (int i = 0; i < 7; i++) points.add(new Point(10+i, 10));
     dx = 1;
     dy = 0;
+    prev_dx = 1;
+    prev_dy = 0;
     hasCrashed = false;
     paint = new Paint();
     paint.setColor(Color.GREEN);
@@ -51,6 +55,8 @@ class Snake {
         points.removeFirst();
       }
     }
+    prev_dx = dx;
+    prev_dy = dy;
   }
 
   void draw(Canvas canvas, float sq_size, float x0, float y0) {
@@ -72,8 +78,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   MainThread mainThread;
   Snake snake;
   float sq_size, x0, y0;
-  int width = 30;
-  int height = 30;
+  private static final int width = 30;
+  private static final int height = 40;
   Paint bgPaint;
 
   public GamePanel(Context context) {
@@ -129,12 +135,12 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   public void onFling(float dx, float dy) {
     if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 3.0 && snake.dy != 0) {snake.dx = 1; snake.dy = 0;}
-      else if (dx < -3.0 && snake.dy != 0) {snake.dx = -1; snake.dy = 0;}
+      if (dx > 10.0 && snake.prev_dy != 0) {snake.dx = 1; snake.dy = 0;}
+      else if (dx < -10.0 && snake.prev_dy != 0) {snake.dx = -1; snake.dy = 0;}
     }
     else {
-      if (dy > 3.0 && snake.dx != 0) {snake.dx = 0; snake.dy = 1;}
-      else if (dy < -3.0 && snake.dx != 0) {snake.dx = 0; snake.dy = -1;}
+      if (dy > 10.0 && snake.prev_dx != 0) {snake.dx = 0; snake.dy = 1;}
+      else if (dy < -10.0 && snake.prev_dx != 0) {snake.dx = 0; snake.dy = -1;}
     }
   }
 }
