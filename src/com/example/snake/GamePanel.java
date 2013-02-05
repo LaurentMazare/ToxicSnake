@@ -17,6 +17,7 @@ class Snake {
   int dy;
   int prev_dx;
   int prev_dy;
+  boolean removeLast;
   Paint paint;
 
   int width;
@@ -27,6 +28,7 @@ class Snake {
     init();
     width = width_;
     height = height_;
+    removeLast = true;
   }
 
   void init() {
@@ -42,6 +44,13 @@ class Snake {
     paint.setAntiAlias(true);
   }
 
+  boolean contains(Point p_) {
+    boolean res = false;
+    for (Point p: points)
+      if (p.x == p_.x && p.y == p_.y) res = true;
+    return res;
+  }
+
   void next() {
     if (!hasCrashed) {
       Point pLast = points.getLast();
@@ -52,11 +61,13 @@ class Snake {
         if (p.x == new_x && p.y == new_y) hasCrashed = true;
       if (!hasCrashed) {
         points.add(new Point(new_x, new_y));
-        points.removeFirst();
+        if (removeLast)
+          points.removeFirst();
       }
     }
     prev_dx = dx;
     prev_dy = dy;
+    removeLast = true;
   }
 
   void draw(Canvas canvas, float sq_size, float x0, float y0) {
@@ -74,9 +85,43 @@ class Snake {
   }
 }
 
+class Elements {
+  Point diamond;
+  Paint paint;
+  int width;
+  int height;
+  Random rng;
+
+  Elements(int w, int h) {
+    width = w;
+    height = h;
+    paint = new Paint();
+    paint.setAntiAlias(true);
+    diamond = new Point(15, 15);
+    rng = new Random();
+  }
+
+  void replaceDiamond(Snake s) {
+    while (true) {
+      diamond.x = rng.nextInt(width);
+      diamond.y = rng.nextInt(height);
+      if (!s.contains(diamond)) break;
+    }
+  }
+
+  void draw(Canvas canvas, float sq_size, float x0, float y0) {
+    float radius = sq_size / 2;
+    paint.setColor(Color.CYAN);
+    float x = x0 + sq_size * diamond.x + radius;
+    float y = y0 + sq_size * diamond.y + radius;
+    canvas.drawCircle(x, y, radius-1, paint);
+  }
+}
+
 public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   MainThread mainThread;
   Snake snake;
+  Elements elts;
   float sq_size, x0, y0;
   private static final int width = 30;
   private static final int height = 40;
@@ -102,6 +147,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     bgPaint = new Paint();
     bgPaint.setColor(Color.DKGRAY);
     snake = new Snake(width, height);
+    elts = new Elements(width, height);
     mainThread = new MainThread(this);
     mainThread.start();
   }
@@ -125,8 +171,13 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   void refresh(Canvas canvas) {
     canvas.drawColor(Color.BLACK);
     canvas.drawRect(x0, y0, x0 + width*sq_size, y0 + height*sq_size, bgPaint);
+    elts.draw(canvas, sq_size, x0, y0);
     snake.draw(canvas, sq_size, x0, y0);
     snake.next();
+    if (snake.contains(elts.diamond)) {
+      snake.removeLast = false;
+      elts.replaceDiamond(snake);
+    }
   }
 
   public void restart() {
