@@ -5,6 +5,8 @@ import android.content.Context;
 import android.util.*;
 import java.util.*;
 
+enum Direction {LEFT, RIGHT, UP, DOWN}
+
 class Point {
   int x;
   int y;
@@ -33,7 +35,7 @@ class Snake {
 
   void init() {
     points = new LinkedList();
-    for (int i = 0; i < 7; i++) points.add(new Point(10+i, 10));
+    for (int i = 0; i < 7; i++) points.add(new Point(8+i, 8));
     dx = 1;
     dy = 0;
     prev_dx = 1;
@@ -122,6 +124,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   MainThread mainThread;
   Snake snake;
   Elements elts;
+  int score = 0;
   float sq_size, x0, y0;
   private static final int width = 30;
   private static final int height = 40;
@@ -175,6 +178,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     snake.draw(canvas, sq_size, x0, y0);
     snake.next();
     if (snake.contains(elts.diamond)) {
+      score++;
       snake.removeLast = false;
       elts.replaceDiamond(snake);
     }
@@ -184,14 +188,10 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     if (snake.hasCrashed) snake.init();
   }
 
-  public void onFling(float dx, float dy) {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 10.0 && snake.prev_dy != 0) {snake.dx = 1; snake.dy = 0;}
-      else if (dx < -10.0 && snake.prev_dy != 0) {snake.dx = -1; snake.dy = 0;}
-    }
-    else {
-      if (dy > 10.0 && snake.prev_dx != 0) {snake.dx = 0; snake.dy = 1;}
-      else if (dy < -10.0 && snake.prev_dx != 0) {snake.dx = 0; snake.dy = -1;}
-    }
+  public void onMove(Direction dir) {
+    if (dir == Direction.RIGHT && snake.prev_dy != 0) {snake.dx = 1; snake.dy = 0;}
+    else if (dir == Direction.LEFT && snake.prev_dy != 0) {snake.dx = -1; snake.dy = 0;}
+    else  if (dir == Direction.UP && snake.prev_dx != 0) {snake.dx = 0; snake.dy = 1;}
+    else if (dir == Direction.DOWN && snake.prev_dx != 0) {snake.dx = 0; snake.dy = -1;}
   }
 }

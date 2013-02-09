@@ -37,8 +37,15 @@ public class MainActivity extends Activity implements OnGestureListener {
   public void onLongPress(MotionEvent ev) {
   }
   @Override
-  public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-    gamePanel.onFling(-distanceX, -distanceY);
+  public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 10.0) gamePanel.onMove(Direction.LEFT);
+      else if (dx < -10.0) gamePanel.onMove(Direction.RIGHT);
+    }
+    else {
+      if (dy > 10.0) gamePanel.onMove(Direction.DOWN);
+      else if (dy < -10.0) gamePanel.onMove(Direction.UP);
+    }
     return true;
   }
   @Override
