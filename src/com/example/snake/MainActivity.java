@@ -38,13 +38,13 @@ public class MainActivity extends Activity implements OnGestureListener {
   }
   @Override
   public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 10.0) gamePanel.onMove(Direction.LEFT);
-      else if (dx < -10.0) gamePanel.onMove(Direction.RIGHT);
+    if (Math.abs(dx) > 2 * Math.abs(dy)) {
+      if (dx > 8.0) gamePanel.onMove(Direction.LEFT);
+      else if (dx < -8.0) gamePanel.onMove(Direction.RIGHT);
     }
-    else {
-      if (dy > 10.0) gamePanel.onMove(Direction.DOWN);
-      else if (dy < -10.0) gamePanel.onMove(Direction.UP);
+    else if (Math.abs(dy) > 2 * Math.abs(dx)) {
+      if (dy > 8.0) gamePanel.onMove(Direction.DOWN);
+      else if (dy < -8.0) gamePanel.onMove(Direction.UP);
     }
     return true;
   }

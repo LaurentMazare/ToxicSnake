@@ -16,16 +16,14 @@ class Point {
 class Snake {
   LinkedList<Point> points;
   Direction dir;
-  Direction prev_dir;
+  Direction prevDir;
   Paint paint;
 
   int width;
   int height;
-  boolean hasCrashed;
 
   Snake(int width_, int height_) {
     init();
-    hasCrashed = true;
     width = width_;
     height = height_;
   }
@@ -33,12 +31,11 @@ class Snake {
   void init() {
     points = new LinkedList();
     for (int i = 0; i < 7; i++) points.add(new Point(5, i));
-    hasCrashed = false;
     paint = new Paint();
     paint.setColor(Color.GREEN);
     paint.setAntiAlias(true);
     dir = Direction.UP;
-    prev_dir = Direction.UP;
+    prevDir = Direction.UP;
   }
 
   boolean contains(Point p_) {
@@ -49,28 +46,21 @@ class Snake {
   }
 
   boolean next(LinkedList<Point> wPoints) {
-    boolean justCrashed = false;
-    if (!hasCrashed) {
-      Point pLast = points.getLast();
-      int newX = pLast.x;
-      int newY = pLast.y;
-      if (dir == Direction.LEFT) newX--;
-      else if (dir == Direction.RIGHT) newX++;
-      else if (dir == Direction.DOWN) newY--;
-      else if (dir == Direction.UP) newY++;
-      hasCrashed = newX < 0 || newX >= width || newY < 0 || newY >= height;
-      for (Point p: wPoints)
-        if (p.x == newX && p.y == newY) hasCrashed = true;
-      for (Point p: points)
-        if (p.x == newX && p.y == newY) hasCrashed = true;
-      if (!hasCrashed) {
-        points.add(new Point(newX, newY));
-      }
-      else
-        justCrashed = true;
-    }
-    prev_dir = dir;
-    return justCrashed;
+    Point pLast = points.getLast();
+    int newX = pLast.x;
+    int newY = pLast.y;
+    if (dir == Direction.LEFT) newX--;
+    else if (dir == Direction.RIGHT) newX++;
+    else if (dir == Direction.DOWN) newY--;
+    else if (dir == Direction.UP) newY++;
+    boolean hasCrashed = newX < 0 || newX >= width || newY < 0 || newY >= height;
+    for (Point p: wPoints)
+      if (p.x == newX && p.y == newY) hasCrashed = true;
+    for (Point p: points)
+      if (p.x == newX && p.y == newY) hasCrashed = true;
+    if (!hasCrashed) points.add(new Point(newX, newY));
+    prevDir = dir;
+    return hasCrashed;
   }
 
   Point removeFirst() {
@@ -79,11 +69,7 @@ class Snake {
     return p;
   }
 
-  void draw(Canvas canvas, float sqSize, float x0, float y0) {
-    if (hasCrashed)
-      paint.setColor(Color.RED);
-    else
-      paint.setColor(Color.GREEN);
+  void draw(Canvas canvas, float sqSize, float x0, float y0, Paint paint) {
     for (Point p: points) {
       float x = x0 + sqSize * p.x;
       float y = y0 + sqSize * p.y;
@@ -101,6 +87,8 @@ class Elements {
   int width;
   int height;
   Random rng;
+  int gColor = 0;
+  boolean gColIncrease = true;
 
   Elements(int w, int h) {
     width = w;
@@ -122,7 +110,15 @@ class Elements {
 
   void draw(Canvas canvas, float sqSize, float x0, float y0) {
     float radius = sqSize / 2;
-    paint.setColor(Color.RED);
+    paint.setColor(Color.rgb(255, gColor, 0));
+    if (gColIncrease) {
+      gColor += 15;
+      if (gColor > 200) {gColor = 200; gColIncrease = false;}
+    }
+    else {
+      gColor -= 15;
+      if (gColor < 0) {gColor = 0; gColIncrease = true;}
+    }
     for (Point p: wPoints) {
       float x = x0 + sqSize * p.x + radius;
       float y = y0 + sqSize * p.y + radius;
@@ -142,6 +138,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   int score = 0;
   int hScore = 0;
   boolean isPaused = false;
+  boolean hasCrashed = true;
   float sqSize, x0, y0;
   private static final int width = 22;
   private static final int height = 30;
@@ -200,25 +197,42 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   private void paintGame(Canvas canvas) {
     // Fixed layout for now...
+    float yMax = y0 + height * sqSize;
+    float xMax = x0 + width * sqSize;
     canvas.drawColor(Color.BLACK);
     bgPaint.setColor(Color.DKGRAY);
-    canvas.drawRect(x0-6, y0-26, x0 + width*sqSize + 6, y0 + height*sqSize + 6, bgPaint);
+    canvas.drawRect(x0-6, y0-26, xMax + 6, yMax + 6, bgPaint);
     bgPaint.setColor(Color.BLACK);
-    canvas.drawRect(x0, y0, x0 + width*sqSize, y0 + height*sqSize, bgPaint);
+    canvas.drawRect(x0, y0, xMax, yMax, bgPaint);
     elts.draw(canvas, sqSize, x0, y0);
-    snake.draw(canvas, sqSize, x0, y0);
-    bgPaint.setColor(Color.WHITE);
-    String scoreStr = "";
-    if (snake.hasCrashed) {
-      scoreStr = String.format("    %03d", hScore);
-      String statusStr = String.format("%03d - HIGH SCORE", score);
-      canvas.drawText(statusStr, x0 + 5, y0 - 5, bgPaint);
-    }
+    bgPaint.setColor(Color.GREEN);
+    snake.draw(canvas, sqSize, x0, y0, bgPaint);
+    if (hasCrashed) drawMenu(canvas);
     else {
-      if (isPaused) canvas.drawText("PAUSED", x0 + 5, y0 - 5, bgPaint);
-      scoreStr = String.format("%03d/%03d", score, hScore);
+      bgPaint.setColor(Color.WHITE);
+      String statusStr = (isPaused) ? "PAUSED": "PAUSE";
+      canvas.drawText(statusStr, x0 + 5, y0 - 5, bgPaint);
+      String scoreStr = String.format("%03d/%03d", score, hScore);
+      canvas.drawText(scoreStr, xMax - 90, y0 - 5, bgPaint);
     }
-    canvas.drawText(scoreStr, x0 + width*sqSize - 90, y0 - 5, bgPaint);
+  }
+
+  private void drawMenu(Canvas canvas) {
+    float yMax = y0 + height * sqSize;
+    float xMax = x0 + width * sqSize;
+    bgPaint.setColor(Color.DKGRAY);
+    bgPaint.setAlpha(200);
+    canvas.drawRect(x0+20, y0+20, xMax-20, yMax-20, bgPaint);
+    bgPaint.setColor(Color.WHITE);
+    if (score > 0)
+      canvas.drawText(String.format("Last Score:   %03d", score), x0+25, y0+75, bgPaint);
+    canvas.drawText(String.format("High Score:   %03d", hScore), x0+25, y0+100, bgPaint);
+    canvas.drawText("Instructions:", x0 + 25, y0 + 200, bgPaint);
+    canvas.drawText("- Swipe/Tap to turn", x0 + 25, y0 + 225, bgPaint);
+    canvas.drawText("- Eat the blue dots", x0 + 25, y0 + 250, bgPaint);
+    canvas.drawText("- Avoid the red ones", x0 + 25, y0 + 275, bgPaint);
+    canvas.drawText("- Tap to start", x0 + 25, y0 + 325, bgPaint);
+    bgPaint.setAlpha(255);
   }
 
   public void refresh(Canvas canvas) {
@@ -227,8 +241,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   private void next() {
-    if (isPaused || snake.hasCrashed) return;
-    boolean justCrashed = snake.next(elts.wPoints);
+    if (isPaused || hasCrashed) return;
+    hasCrashed = snake.next(elts.wPoints);
     if (snake.contains(elts.diamond)) {
       score++;
       elts.replaceDiamond(snake);
@@ -239,7 +253,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     }
     else
       snake.removeFirst();
-    if (justCrashed && score > hScore) {
+    if (hasCrashed && score > hScore) {
       hScore = score;
       SharedPreferences.Editor edit = prefs.edit();
       edit.putInt("HighScore", score);
@@ -248,19 +262,18 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public void onTap(float x, float y) {
-    if (isPaused)
-      isPaused = false;
-    else if (snake.hasCrashed) {
+    if (isPaused) isPaused = false;
+    else if (hasCrashed) {
       snake.init();
       isPaused = false;
       score = 0;
       elts.wPoints.clear();
       elts.replaceDiamond(snake);
     }
-    else if (y < y0 - 10)
+    else if (y < y0)
       isPaused = true;
     else {
-      boolean isVertical = snake.dir == Direction.DOWN || snake.dir == Direction.UP;
+      boolean isVertical = snake.prevDir == Direction.DOWN || snake.prevDir == Direction.UP;
       Point p = snake.points.getLast();
       float currentX = x0 + sqSize * p.x;
       float currentY = y0 + sqSize * p.y;
@@ -272,8 +285,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public void onMove(Direction dir) {
-    if (isPaused || snake.hasCrashed) return;
-    boolean isVertical = snake.dir == Direction.DOWN || snake.dir == Direction.UP;
+    if (isPaused || hasCrashed) return;
+    boolean isVertical = snake.prevDir == Direction.DOWN || snake.prevDir == Direction.UP;
     if ((dir == Direction.RIGHT && isVertical) ||
         (dir == Direction.LEFT && isVertical) ||
         (dir == Direction.UP && !isVertical) ||
