@@ -56,4 +56,7 @@ public class MainActivity extends Activity implements OnGestureListener {
   public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
     return true;
   }
+  @Override
+  public void onBackPressed() {
+  }
 }
