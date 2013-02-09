@@ -17,7 +17,6 @@ class Snake {
   LinkedList<Point> points;
   Direction dir;
   Direction prev_dir;
-  boolean removeLast;
   Paint paint;
 
   int width;
@@ -29,7 +28,6 @@ class Snake {
     hasCrashed = true;
     width = width_;
     height = height_;
-    removeLast = true;
   }
 
   void init() {
@@ -50,30 +48,35 @@ class Snake {
     return res;
   }
 
-  boolean next() {
+  boolean next(LinkedList<Point> wPoints) {
     boolean justCrashed = false;
     if (!hasCrashed) {
       Point pLast = points.getLast();
-      int new_x = pLast.x;
-      int new_y = pLast.y;
-      if (dir == Direction.LEFT) new_x--;
-      else if (dir == Direction.RIGHT) new_x++;
-      else if (dir == Direction.DOWN) new_y--;
-      else if (dir == Direction.UP) new_y++;
-      hasCrashed = new_x < 0 || new_x >= width || new_y < 0 || new_y >= height;
+      int newX = pLast.x;
+      int newY = pLast.y;
+      if (dir == Direction.LEFT) newX--;
+      else if (dir == Direction.RIGHT) newX++;
+      else if (dir == Direction.DOWN) newY--;
+      else if (dir == Direction.UP) newY++;
+      hasCrashed = newX < 0 || newX >= width || newY < 0 || newY >= height;
+      for (Point p: wPoints)
+        if (p.x == newX && p.y == newY) hasCrashed = true;
       for (Point p: points)
-        if (p.x == new_x && p.y == new_y) hasCrashed = true;
+        if (p.x == newX && p.y == newY) hasCrashed = true;
       if (!hasCrashed) {
-        points.add(new Point(new_x, new_y));
-        if (removeLast)
-          points.removeFirst();
+        points.add(new Point(newX, newY));
       }
       else
         justCrashed = true;
     }
     prev_dir = dir;
-    removeLast = true;
     return justCrashed;
+  }
+
+  Point removeFirst() {
+    Point p = points.getFirst();
+    points.removeFirst();
+    return p;
   }
 
   void draw(Canvas canvas, float sqSize, float x0, float y0) {
@@ -93,6 +96,7 @@ class Snake {
 
 class Elements {
   Point diamond;
+  LinkedList<Point> wPoints;
   Paint paint;
   int width;
   int height;
@@ -105,6 +109,7 @@ class Elements {
     paint.setAntiAlias(true);
     diamond = new Point(15, 15);
     rng = new Random();
+    wPoints = new LinkedList();
   }
 
   void replaceDiamond(Snake s) {
@@ -117,6 +122,12 @@ class Elements {
 
   void draw(Canvas canvas, float sqSize, float x0, float y0) {
     float radius = sqSize / 2;
+    paint.setColor(Color.RED);
+    for (Point p: wPoints) {
+      float x = x0 + sqSize * p.x + radius;
+      float y = y0 + sqSize * p.y + radius;
+      canvas.drawCircle(x, y, radius-1, paint);
+    }
     paint.setColor(Color.CYAN);
     float x = x0 + sqSize * diamond.x + radius;
     float y = y0 + sqSize * diamond.y + radius;
@@ -200,7 +211,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     String scoreStr = "";
     if (snake.hasCrashed) {
       scoreStr = String.format("    %03d", hScore);
-      canvas.drawText("HIGH SCORE", x0 + 5, y0 - 5, bgPaint);
+      String statusStr = String.format("%03d - HIGH SCORE", score);
+      canvas.drawText(statusStr, x0 + 5, y0 - 5, bgPaint);
     }
     else {
       if (isPaused) canvas.drawText("PAUSED", x0 + 5, y0 - 5, bgPaint);
@@ -216,20 +228,22 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   private void next() {
     if (isPaused || snake.hasCrashed) return;
-    boolean justCrashed = snake.next();
+    boolean justCrashed = snake.next(elts.wPoints);
     if (snake.contains(elts.diamond)) {
       score++;
-      snake.removeLast = false;
       elts.replaceDiamond(snake);
-    }
-    if (justCrashed) {
-      if (score > hScore) {
-        hScore = score;
-        SharedPreferences.Editor edit = prefs.edit();
-        edit.putInt("HighScore", score);
-        edit.commit();
+      if (score % 3 == 0) {
+        Point p = snake.removeFirst();
+        elts.wPoints.add(p);
       }
-      score = 0;
+    }
+    else
+      snake.removeFirst();
+    if (justCrashed && score > hScore) {
+      hScore = score;
+      SharedPreferences.Editor edit = prefs.edit();
+      edit.putInt("HighScore", score);
+      edit.commit();
     }
   }
 
@@ -239,6 +253,9 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     else if (snake.hasCrashed) {
       snake.init();
       isPaused = false;
+      score = 0;
+      elts.wPoints.clear();
+      elts.replaceDiamond(snake);
     }
     else if (y < y0 - 10)
       isPaused = true;
