@@ -1,7 +1,7 @@
 package com.example.snake;
 import android.view.*;
 import android.graphics.*;
-import android.content.Context;
+import android.content.*;
 import android.util.*;
 import java.util.*;
 
@@ -49,7 +49,8 @@ class Snake {
     return res;
   }
 
-  void next() {
+  boolean next() {
+    boolean justCrashed = false;
     if (!hasCrashed) {
       Point pLast = points.getLast();
       int new_x = pLast.x;
@@ -66,9 +67,12 @@ class Snake {
         if (removeLast)
           points.removeFirst();
       }
+      else
+        justCrashed = true;
     }
     prev_dir = dir;
     removeLast = true;
+    return justCrashed;
   }
 
   void draw(Canvas canvas, float sq_size, float x0, float y0) {
@@ -124,20 +128,28 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   Snake snake;
   Elements elts;
   int score = 0;
+  int hScore = 0;
   boolean isPaused = true;
   float sq_size, x0, y0;
   private static final int width = 30;
   private static final int height = 40;
   Paint bgPaint;
+  SharedPreferences prefs;
 
   public GamePanel(Context context) {
     super(context);
+    init(context);
+  }
+
+  private void init(Context context) {
     getHolder().addCallback(this); // Register self as call back
+    prefs = context.getSharedPreferences("ToxicSnakePrefs", 0);
+    hScore = prefs.getInt("HighScore", 0);
   }
 
   public GamePanel(Context context, AttributeSet attrSet) {
     super(context, attrSet);
-    getHolder().addCallback(this); // Register self as call back
+    init(context);
   }
 
   @Override
@@ -174,7 +186,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  void refresh(Canvas canvas) {
+  private void paintGame(Canvas canvas) {
     // Fixed layout for now...
     canvas.drawColor(Color.BLACK);
     bgPaint.setColor(Color.DKGRAY);
@@ -184,18 +196,31 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     elts.draw(canvas, sq_size, x0, y0);
     snake.draw(canvas, sq_size, x0, y0);
     bgPaint.setColor(Color.WHITE);
-    String scoreStr = String.format("%03d", score);
-    canvas.drawText(scoreStr, x0 + width*sq_size - 40, y0 - 5, bgPaint);
+    String scoreStr = String.format("%03d/%03d", score, hScore);
+    canvas.drawText(scoreStr, x0 + width*sq_size - 90, y0 - 5, bgPaint);
+  }
+
+  public void refresh(Canvas canvas) {
+    paintGame(canvas);
     next();
   }
 
-  void next() {
+  private void next() {
     if (isPaused) return;
-    snake.next();
+    boolean justCrashed = snake.next();
     if (snake.contains(elts.diamond)) {
       score++;
       snake.removeLast = false;
       elts.replaceDiamond(snake);
+    }
+    if (justCrashed) {
+      if (score > hScore) {
+        hScore = score;
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putInt("HighScore", score);
+        edit.commit();
+      }
+      score = 0;
     }
   }
 
@@ -211,6 +236,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public void onMove(Direction dir) {
+    if (isPaused || snake.hasCrashed) return;
     boolean isVertical = snake.dir == Direction.DOWN || snake.dir == Direction.UP;
     if ((dir == Direction.RIGHT && isVertical) ||
         (dir == Direction.LEFT && isVertical) ||
