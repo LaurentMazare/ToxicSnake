@@ -37,8 +37,8 @@ class Snake {
     paint = new Paint();
     paint.setColor(Color.GREEN);
     paint.setAntiAlias(true);
-    dir = Direction.RIGHT;
-    dir = Direction.RIGHT;
+    dir = Direction.UP;
+    prev_dir = Direction.UP;
   }
 
   boolean contains(Point p_) {
@@ -143,8 +143,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   int hScore = 0;
   boolean isPaused = false;
   float sqSize, x0, y0;
-  private static final int width = 30;
-  private static final int height = 40;
+  private static final int width = 20;
+  private static final int height = 28;
   Paint bgPaint;
   SharedPreferences prefs;
 
