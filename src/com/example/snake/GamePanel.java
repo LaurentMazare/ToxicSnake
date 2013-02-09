@@ -32,7 +32,7 @@ class Snake {
 
   void init() {
     points = new LinkedList();
-    for (int i = 0; i < 7; i++) points.add(new Point(1+i, 6));
+    for (int i = 0; i < 7; i++) points.add(new Point(5, i));
     hasCrashed = false;
     paint = new Paint();
     paint.setColor(Color.GREEN);
@@ -143,8 +143,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   int hScore = 0;
   boolean isPaused = false;
   float sqSize, x0, y0;
-  private static final int width = 20;
-  private static final int height = 28;
+  private static final int width = 22;
+  private static final int height = 30;
   Paint bgPaint;
   SharedPreferences prefs;
 
