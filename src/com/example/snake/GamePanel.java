@@ -142,13 +142,16 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   @Override
   public void surfaceCreated(SurfaceHolder holder) {
-    int dimX = ((int)getWidth() - 10) / (width + 1);
-    int dimY = ((int)getHeight() - 10) / (height + 1);
+    int dimX = ((int)getWidth() - 15) / (width + 1);
+    int dimY = ((int)getHeight() - 30) / (height + 1);
     sq_size = Math.min(dimX, dimY);
     x0 = ((float)getWidth() - width * sq_size) / 2;
     y0 = ((float)getHeight() - height * sq_size) / 2;
     bgPaint = new Paint();
     bgPaint.setColor(Color.DKGRAY);
+    bgPaint.setTextSize(20);
+    bgPaint.setAntiAlias(true);
+    bgPaint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD_ITALIC));
     snake = new Snake(width, height);
     elts = new Elements(width, height);
     mainThread = new MainThread(this);
@@ -173,9 +176,19 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   void refresh(Canvas canvas) {
     canvas.drawColor(Color.BLACK);
+    bgPaint.setColor(Color.DKGRAY);
+    canvas.drawRect(x0-6, y0-26, x0 + width*sq_size + 6, y0 + height*sq_size + 6, bgPaint);
+    bgPaint.setColor(Color.BLACK);
     canvas.drawRect(x0, y0, x0 + width*sq_size, y0 + height*sq_size, bgPaint);
     elts.draw(canvas, sq_size, x0, y0);
     snake.draw(canvas, sq_size, x0, y0);
+    bgPaint.setColor(Color.WHITE);
+    String scoreStr = String.format("%03d", score);
+    canvas.drawText(scoreStr, x0 + width*sq_size - 40, y0 - 5, bgPaint);
+    next();
+  }
+
+  void next() {
     snake.next();
     if (snake.contains(elts.diamond)) {
       score++;
