@@ -18,3 +18,8 @@ local.properties
 # Eclipse project files
 .classpath
 .project
+
+ant.properties
+build.xml
+proguard-project.txt
+project.properties
