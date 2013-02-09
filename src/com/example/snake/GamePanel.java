@@ -6,6 +6,7 @@ import android.util.*;
 import java.util.*;
 
 enum Direction {LEFT, RIGHT, UP, DOWN}
+enum Mode {PAUSED, PLAYING, CRASHED, DEMO}
 
 class Point {
   int x;
@@ -23,17 +24,18 @@ class Snake {
   int height;
 
   Snake(int width_, int height_) {
-    init();
     width = width_;
     height = height_;
-  }
-
-  void init() {
     points = new LinkedList();
-    for (int i = 0; i < 7; i++) points.add(new Point(5, i));
     paint = new Paint();
     paint.setColor(Color.GREEN);
     paint.setAntiAlias(true);
+    init();
+  }
+
+  void init() {
+    points.clear();
+    for (int i = 0; i < 7; i++) points.add(new Point(5, i));
     dir = Direction.UP;
     prevDir = Direction.UP;
   }
@@ -131,19 +133,32 @@ class Elements {
   }
 }
 
+class Demo {
+  static Direction getDirection(Snake snake, Elements elts) {
+    Point pLast = snake.points.getLast();
+    int x = pLast.x;
+    int y = pLast.y;
+    Direction dir = snake.dir;
+    if ((snake.dir == Direction.DOWN && y < 3) || (snake.dir == Direction.UP && y > snake.height - 3))
+      dir = (x < snake.width / 2) ? Direction.RIGHT: Direction.LEFT;
+    if ((snake.dir == Direction.LEFT && x < 3) || (snake.dir == Direction.RIGHT && x > snake.width - 3))
+      dir = (y < snake.height / 2) ? Direction.UP: Direction.DOWN;
+    return dir;
+  }
+}
+
 public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   MainThread mainThread;
   Snake snake;
   Elements elts;
   int score = 0;
   int hScore = 0;
-  boolean isPaused = false;
-  boolean hasCrashed = true;
   float sqSize, x0, y0;
   private static final int width = 22;
   private static final int height = 30;
   Paint bgPaint;
   SharedPreferences prefs;
+  Mode mode = Mode.DEMO;
 
   public GamePanel(Context context) {
     super(context);
@@ -207,10 +222,10 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     elts.draw(canvas, sqSize, x0, y0);
     bgPaint.setColor(Color.GREEN);
     snake.draw(canvas, sqSize, x0, y0, bgPaint);
-    if (hasCrashed) drawMenu(canvas);
+    if (mode == Mode.DEMO || mode == Mode.CRASHED) drawMenu(canvas);
     else {
       bgPaint.setColor(Color.WHITE);
-      String statusStr = (isPaused) ? "PAUSED": "PAUSE";
+      String statusStr = (mode == Mode.PAUSED) ? "PAUSED": "PAUSE";
       canvas.drawText(statusStr, x0 + 5, y0 - 5, bgPaint);
       String scoreStr = String.format("%03d/%03d", score, hScore);
       canvas.drawText(scoreStr, xMax - 90, y0 - 5, bgPaint);
@@ -237,41 +252,50 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   public void refresh(Canvas canvas) {
     paintGame(canvas);
+    if (mode == Mode.DEMO) snake.dir = Demo.getDirection(snake, elts);
     next();
   }
 
   private void next() {
-    if (isPaused || hasCrashed) return;
-    hasCrashed = snake.next(elts.wPoints);
-    if (snake.contains(elts.diamond)) {
-      score++;
-      elts.replaceDiamond(snake);
-      if (score % 3 == 0) {
-        Point p = snake.removeFirst();
-        elts.wPoints.add(p);
+    if (mode == Mode.CRASHED || mode == Mode.PAUSED) return;
+    boolean hasCrashed = snake.next(elts.wPoints);
+    if (!hasCrashed) {
+      if (snake.contains(elts.diamond)) {
+        score++;
+        elts.replaceDiamond(snake);
+        if (score % 3 == 0) {
+          Point p = snake.removeFirst();
+          elts.wPoints.add(p);
+        }
       }
+      else snake.removeFirst();
     }
-    else
-      snake.removeFirst();
-    if (hasCrashed && score > hScore) {
-      hScore = score;
-      SharedPreferences.Editor edit = prefs.edit();
-      edit.putInt("HighScore", score);
-      edit.commit();
+    else {
+      if (score > hScore) {
+        hScore = score;
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putInt("HighScore", score);
+        edit.commit();
+      }
+      if (mode == Mode.PLAYING) mode = Mode.CRASHED;
+      if (mode == Mode.DEMO) clear();
     }
   }
 
+  private void clear() {
+    snake.init();
+    elts.wPoints.clear();
+    elts.replaceDiamond(snake);
+  }
+
   public void onTap(float x, float y) {
-    if (isPaused) isPaused = false;
-    else if (hasCrashed) {
-      snake.init();
-      isPaused = false;
+    if (mode == Mode.PAUSED) mode = Mode.PLAYING;
+    else if (mode == Mode.CRASHED || mode == Mode.DEMO) {
+      mode = Mode.PLAYING;
       score = 0;
-      elts.wPoints.clear();
-      elts.replaceDiamond(snake);
+      clear();
     }
-    else if (y < y0)
-      isPaused = true;
+    else if (y < y0) mode = Mode.PAUSED;
     else {
       boolean isVertical = snake.prevDir == Direction.DOWN || snake.prevDir == Direction.UP;
       Point p = snake.points.getLast();
@@ -285,7 +309,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public void onMove(Direction dir) {
-    if (isPaused || hasCrashed) return;
+    if (mode != Mode.PLAYING) return;
     boolean isVertical = snake.prevDir == Direction.DOWN || snake.prevDir == Direction.UP;
     if ((dir == Direction.RIGHT && isVertical) ||
         (dir == Direction.LEFT && isVertical) ||
