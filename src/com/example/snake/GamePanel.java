@@ -22,10 +22,11 @@ class Snake {
 
   int width;
   int height;
-  boolean hasCrashed = false;
+  boolean hasCrashed;
 
   Snake(int width_, int height_) {
     init();
+    hasCrashed = true;
     width = width_;
     height = height_;
     removeLast = true;
@@ -75,16 +76,16 @@ class Snake {
     return justCrashed;
   }
 
-  void draw(Canvas canvas, float sq_size, float x0, float y0) {
+  void draw(Canvas canvas, float sqSize, float x0, float y0) {
     if (hasCrashed)
       paint.setColor(Color.RED);
     else
       paint.setColor(Color.GREEN);
     for (Point p: points) {
-      float x = x0 + sq_size * p.x;
-      float y = y0 + sq_size * p.y;
-      float x_p = x + sq_size-1;
-      float y_p = y + sq_size-1;
+      float x = x0 + sqSize * p.x;
+      float y = y0 + sqSize * p.y;
+      float x_p = x + sqSize-1;
+      float y_p = y + sqSize-1;
       canvas.drawRect(x, y, x_p, y_p, paint);
     }
   }
@@ -108,17 +109,17 @@ class Elements {
 
   void replaceDiamond(Snake s) {
     while (true) {
-      diamond.x = rng.nextInt(width);
-      diamond.y = rng.nextInt(height);
+      diamond.x = 1 + rng.nextInt(width - 2);
+      diamond.y = 1 + rng.nextInt(height - 2);
       if (!s.contains(diamond)) break;
     }
   }
 
-  void draw(Canvas canvas, float sq_size, float x0, float y0) {
-    float radius = sq_size / 2;
+  void draw(Canvas canvas, float sqSize, float x0, float y0) {
+    float radius = sqSize / 2;
     paint.setColor(Color.CYAN);
-    float x = x0 + sq_size * diamond.x + radius;
-    float y = y0 + sq_size * diamond.y + radius;
+    float x = x0 + sqSize * diamond.x + radius;
+    float y = y0 + sqSize * diamond.y + radius;
     canvas.drawCircle(x, y, radius-1, paint);
   }
 }
@@ -129,8 +130,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   Elements elts;
   int score = 0;
   int hScore = 0;
-  boolean isPaused = true;
-  float sq_size, x0, y0;
+  boolean isPaused = false;
+  float sqSize, x0, y0;
   private static final int width = 30;
   private static final int height = 40;
   Paint bgPaint;
@@ -156,9 +157,9 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   public void surfaceCreated(SurfaceHolder holder) {
     int dimX = ((int)getWidth() - 15) / (width + 1);
     int dimY = ((int)getHeight() - 30) / (height + 1);
-    sq_size = Math.min(dimX, dimY);
-    x0 = ((float)getWidth() - width * sq_size) / 2;
-    y0 = ((float)getHeight() - height * sq_size) / 2;
+    sqSize = Math.min(dimX, dimY);
+    x0 = ((float)getWidth() - width * sqSize) / 2;
+    y0 = ((float)getHeight() - height * sqSize) / 2;
     bgPaint = new Paint();
     bgPaint.setColor(Color.DKGRAY);
     bgPaint.setTextSize(20);
@@ -190,14 +191,22 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     // Fixed layout for now...
     canvas.drawColor(Color.BLACK);
     bgPaint.setColor(Color.DKGRAY);
-    canvas.drawRect(x0-6, y0-26, x0 + width*sq_size + 6, y0 + height*sq_size + 6, bgPaint);
+    canvas.drawRect(x0-6, y0-26, x0 + width*sqSize + 6, y0 + height*sqSize + 6, bgPaint);
     bgPaint.setColor(Color.BLACK);
-    canvas.drawRect(x0, y0, x0 + width*sq_size, y0 + height*sq_size, bgPaint);
-    elts.draw(canvas, sq_size, x0, y0);
-    snake.draw(canvas, sq_size, x0, y0);
+    canvas.drawRect(x0, y0, x0 + width*sqSize, y0 + height*sqSize, bgPaint);
+    elts.draw(canvas, sqSize, x0, y0);
+    snake.draw(canvas, sqSize, x0, y0);
     bgPaint.setColor(Color.WHITE);
-    String scoreStr = String.format("%03d/%03d", score, hScore);
-    canvas.drawText(scoreStr, x0 + width*sq_size - 90, y0 - 5, bgPaint);
+    String scoreStr = "";
+    if (snake.hasCrashed) {
+      scoreStr = String.format("    %03d", hScore);
+      canvas.drawText("HIGH SCORE", x0 + 5, y0 - 5, bgPaint);
+    }
+    else {
+      if (isPaused) canvas.drawText("PAUSED", x0 + 5, y0 - 5, bgPaint);
+      scoreStr = String.format("%03d/%03d", score, hScore);
+    }
+    canvas.drawText(scoreStr, x0 + width*sqSize - 90, y0 - 5, bgPaint);
   }
 
   public void refresh(Canvas canvas) {
@@ -206,7 +215,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   private void next() {
-    if (isPaused) return;
+    if (isPaused || snake.hasCrashed) return;
     boolean justCrashed = snake.next();
     if (snake.contains(elts.diamond)) {
       score++;
@@ -231,8 +240,18 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
       snake.init();
       isPaused = false;
     }
-    else if (y < y0)
+    else if (y < y0 - 10)
       isPaused = true;
+    else {
+      boolean isVertical = snake.dir == Direction.DOWN || snake.dir == Direction.UP;
+      Point p = snake.points.getLast();
+      float currentX = x0 + sqSize * p.x;
+      float currentY = y0 + sqSize * p.y;
+      if (isVertical && x < currentX) snake.dir = Direction.LEFT;
+      else if (isVertical && currentX + sqSize < x) snake.dir = Direction.RIGHT;
+      else if (!isVertical && currentY + sqSize < y) snake.dir = Direction.UP;
+      else if (!isVertical && y < currentY) snake.dir = Direction.DOWN;
+    }
   }
 
   public void onMove(Direction dir) {
