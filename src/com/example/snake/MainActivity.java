@@ -27,7 +27,7 @@ public class MainActivity extends Activity implements OnGestureListener {
 
   @Override
   public boolean onSingleTapUp(MotionEvent ev) {
-    gamePanel.restart();
+    gamePanel.onTap(ev.getX(), ev.getY());
     return true;
   }
   @Override

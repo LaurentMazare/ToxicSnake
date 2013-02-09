@@ -15,10 +15,8 @@ class Point {
 
 class Snake {
   LinkedList<Point> points;
-  int dx;
-  int dy;
-  int prev_dx;
-  int prev_dy;
+  Direction dir;
+  Direction prev_dir;
   boolean removeLast;
   Paint paint;
 
@@ -35,15 +33,13 @@ class Snake {
 
   void init() {
     points = new LinkedList();
-    for (int i = 0; i < 7; i++) points.add(new Point(8+i, 8));
-    dx = 1;
-    dy = 0;
-    prev_dx = 1;
-    prev_dy = 0;
+    for (int i = 0; i < 7; i++) points.add(new Point(1+i, 6));
     hasCrashed = false;
     paint = new Paint();
     paint.setColor(Color.GREEN);
     paint.setAntiAlias(true);
+    dir = Direction.RIGHT;
+    dir = Direction.RIGHT;
   }
 
   boolean contains(Point p_) {
@@ -56,8 +52,12 @@ class Snake {
   void next() {
     if (!hasCrashed) {
       Point pLast = points.getLast();
-      int new_x = pLast.x + dx;
-      int new_y = pLast.y + dy;
+      int new_x = pLast.x;
+      int new_y = pLast.y;
+      if (dir == Direction.LEFT) new_x--;
+      else if (dir == Direction.RIGHT) new_x++;
+      else if (dir == Direction.DOWN) new_y--;
+      else if (dir == Direction.UP) new_y++;
       hasCrashed = new_x < 0 || new_x >= width || new_y < 0 || new_y >= height;
       for (Point p: points)
         if (p.x == new_x && p.y == new_y) hasCrashed = true;
@@ -67,8 +67,7 @@ class Snake {
           points.removeFirst();
       }
     }
-    prev_dx = dx;
-    prev_dy = dy;
+    prev_dir = dir;
     removeLast = true;
   }
 
@@ -125,6 +124,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   Snake snake;
   Elements elts;
   int score = 0;
+  boolean isPaused = true;
   float sq_size, x0, y0;
   private static final int width = 30;
   private static final int height = 40;
@@ -175,6 +175,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   void refresh(Canvas canvas) {
+    // Fixed layout for now...
     canvas.drawColor(Color.BLACK);
     bgPaint.setColor(Color.DKGRAY);
     canvas.drawRect(x0-6, y0-26, x0 + width*sq_size + 6, y0 + height*sq_size + 6, bgPaint);
@@ -189,6 +190,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   void next() {
+    if (isPaused) return;
     snake.next();
     if (snake.contains(elts.diamond)) {
       score++;
@@ -197,14 +199,22 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  public void restart() {
-    if (snake.hasCrashed) snake.init();
+  public void onTap(float x, float y) {
+    if (isPaused)
+      isPaused = false;
+    else if (snake.hasCrashed) {
+      snake.init();
+      isPaused = false;
+    }
+    else if (y < y0)
+      isPaused = true;
   }
 
   public void onMove(Direction dir) {
-    if (dir == Direction.RIGHT && snake.prev_dy != 0) {snake.dx = 1; snake.dy = 0;}
-    else if (dir == Direction.LEFT && snake.prev_dy != 0) {snake.dx = -1; snake.dy = 0;}
-    else  if (dir == Direction.UP && snake.prev_dx != 0) {snake.dx = 0; snake.dy = 1;}
-    else if (dir == Direction.DOWN && snake.prev_dx != 0) {snake.dx = 0; snake.dy = -1;}
+    boolean isVertical = snake.dir == Direction.DOWN || snake.dir == Direction.UP;
+    if ((dir == Direction.RIGHT && isVertical) ||
+        (dir == Direction.LEFT && isVertical) ||
+        (dir == Direction.UP && !isVertical) ||
+        (dir == Direction.DOWN && !isVertical)) snake.dir = dir;
   }
 }
