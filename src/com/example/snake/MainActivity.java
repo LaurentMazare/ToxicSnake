@@ -59,4 +59,9 @@ public class MainActivity extends Activity implements OnGestureListener {
   @Override
   public void onBackPressed() {
   }
+  @Override
+  public void onPause() {
+    super.onPause();
+    gamePanel.pause();
+  }
 }

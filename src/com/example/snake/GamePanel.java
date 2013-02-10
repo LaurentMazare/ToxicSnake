@@ -322,4 +322,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         (dir == Direction.UP && !isVertical) ||
         (dir == Direction.DOWN && !isVertical)) snake.dir = dir;
   }
+
+  public void pause() {
+    if (mode == Mode.PLAYING) mode = Mode.PAUSED;
+  }
 }
