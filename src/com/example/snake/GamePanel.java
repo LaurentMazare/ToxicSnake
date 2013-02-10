@@ -163,6 +163,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   Paint bgPaint;
   SharedPreferences prefs;
   Mode mode = Mode.DEMO;
+  long restartTime = System.currentTimeMillis();
 
   public GamePanel(Context context) {
     super(context);
@@ -260,6 +261,9 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     paintGame(canvas);
     if (mode == Mode.DEMO) snake.dir = Demo.getDirection(snake, elts);
     next();
+    if (mode == Mode.CRASHED) 
+      if (System.currentTimeMillis() > restartTime)
+        startGame(Mode.DEMO);
   }
 
   private void next() {
@@ -267,7 +271,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     boolean hasCrashed = snake.next(elts.wPoints);
     if (!hasCrashed) {
       if (snake.contains(elts.diamond)) {
-        score++;
+        if (mode == Mode.PLAYING) score++;
         elts.replaceDiamond(snake);
         if (score % 3 == 0) {
           Point p = snake.removeFirst();
@@ -283,12 +287,13 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         edit.putInt("HighScore", score);
         edit.commit();
       }
-      if (mode == Mode.PLAYING) mode = Mode.CRASHED;
-      if (mode == Mode.DEMO) clear();
+      restartTime = System.currentTimeMillis() + 1000 * 20;
+      mode = Mode.CRASHED;
     }
   }
 
-  private void clear() {
+  private void startGame(Mode m) {
+    mode = m;
     score = 0;
     snake.init();
     elts.wPoints.clear();
@@ -297,10 +302,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   public void onTap(float x, float y) {
     if (mode == Mode.PAUSED) mode = Mode.PLAYING;
-    else if (mode == Mode.CRASHED || mode == Mode.DEMO) {
-      mode = Mode.PLAYING;
-      clear();
-    }
+    else if (mode == Mode.CRASHED || mode == Mode.DEMO)
+      startGame(Mode.PLAYING);
     else if (y < y0) mode = Mode.PAUSED;
     else {
       boolean isVertical = snake.prevDir == Direction.DOWN || snake.prevDir == Direction.UP;
