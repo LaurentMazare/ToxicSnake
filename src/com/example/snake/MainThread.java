@@ -23,12 +23,13 @@ public class MainThread extends Thread {
     SurfaceHolder holder = panel.getHolder();
     while (isRunning) {
       Canvas canvas = holder.lockCanvas();
+      int timeToSleep = 100;
       if (null != canvas) {
-        panel.refresh(canvas);
+        timeToSleep = panel.refresh(canvas);
         holder.unlockCanvasAndPost(canvas);
       }
       try {
-        sleep(100);
+        sleep(timeToSleep);
       }
       catch (InterruptedException e) {
         Log.v("Exception: ", e.getMessage());

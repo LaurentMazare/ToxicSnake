@@ -156,6 +156,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   Snake snake = null;
   Elements elts;
   int score = 0;
+  int lScore = 0;
   int hScore = 0;
   float sqSize, x0, y0;
   private static final int width = 22;
@@ -234,9 +235,9 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
       bgPaint.setColor(Color.WHITE);
       String statusStr = (mode == Mode.PAUSED) ? "PAUSED": "PAUSE";
       canvas.drawText(statusStr, x0 + 5, y0 - 5, bgPaint);
+      String scoreStr = String.format("%03d/%03d", score, hScore);
+      canvas.drawText(scoreStr, xMax - 90, y0 - 5, bgPaint);
     }
-    String scoreStr = String.format("%03d/%03d", score, hScore);
-    canvas.drawText(scoreStr, xMax - 90, y0 - 5, bgPaint);
   }
 
   private void drawMenu(Canvas canvas) {
@@ -246,8 +247,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     bgPaint.setAlpha(200);
     canvas.drawRect(x0+20, y0+20, xMax-20, yMax-20, bgPaint);
     bgPaint.setColor(Color.WHITE);
-    if (score > 0 && mode != Mode.DEMO)
-      canvas.drawText(String.format("Last Score:   %03d", score), x0+25, y0+75, bgPaint);
+    if (lScore > 0 && mode != Mode.DEMO)
+      canvas.drawText(String.format("Last Score:   %03d", lScore), x0+25, y0+75, bgPaint);
     canvas.drawText(String.format("High Score:   %03d", hScore), x0+25, y0+100, bgPaint);
     canvas.drawText("Instructions:", x0 + 25, y0 + 200, bgPaint);
     canvas.drawText("- Swipe/Tap to turn", x0 + 25, y0 + 225, bgPaint);
@@ -257,13 +258,14 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     bgPaint.setAlpha(255);
   }
 
-  public void refresh(Canvas canvas) {
+  public int refresh(Canvas canvas) {
     paintGame(canvas);
     if (mode == Mode.DEMO) snake.dir = Demo.getDirection(snake, elts);
     next();
     if (mode == Mode.CRASHED) 
       if (System.currentTimeMillis() > restartTime)
         startGame(Mode.DEMO);
+    return Math.max(100, 150 - 2 * score);
   }
 
   private void next() {
@@ -271,7 +273,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     boolean hasCrashed = snake.next(elts.wPoints);
     if (!hasCrashed) {
       if (snake.contains(elts.diamond)) {
-        if (mode == Mode.PLAYING) score++;
+        score++;
         elts.replaceDiamond(snake);
         if (score % 3 == 0) {
           Point p = snake.removeFirst();
@@ -281,6 +283,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
       else snake.removeFirst();
     }
     else {
+      if (mode == Mode.PLAYING) lScore = score;
       if (score > hScore && mode == Mode.PLAYING) {
         hScore = score;
         SharedPreferences.Editor edit = prefs.edit();
