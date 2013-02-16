@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.trialanderrorapps.snake;
 
 import android.app.Activity;
 import android.os.Bundle;

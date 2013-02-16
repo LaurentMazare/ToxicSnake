@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.trialanderrorapps.snake;
 import android.view.*;
 import android.graphics.Canvas;
 import android.content.Context;
@@ -32,7 +32,6 @@ public class MainThread extends Thread {
         sleep(timeToSleep);
       }
       catch (InterruptedException e) {
-        Log.v("Exception: ", e.getMessage());
       }
     }
   }

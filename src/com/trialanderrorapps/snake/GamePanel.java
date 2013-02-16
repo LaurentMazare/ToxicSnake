@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.trialanderrorapps.snake;
 import android.view.*;
 import android.graphics.*;
 import android.content.*;
@@ -213,7 +213,6 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
         break;
       }
       catch(Exception e) {
-        Log.v("Exception: ", e.getMessage());
       }
     }
   }
