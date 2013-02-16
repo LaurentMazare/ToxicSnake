@@ -1,4 +1,5 @@
 package com.trialanderrorapps.snake;
+import android.app.Activity;
 import android.view.*;
 import android.graphics.*;
 import android.content.*;
@@ -152,6 +153,7 @@ class Demo {
 }
 
 public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
+  Activity activity;
   MainThread mainThread = null;
   Snake snake = null;
   Elements elts;
@@ -162,24 +164,19 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   private static final int width = 22;
   private static final int height = 30;
   Paint bgPaint;
-  SharedPreferences prefs;
-  Mode mode = Mode.DEMO;
+  Mode mode = Mode.PLAYING;
   long restartTime = System.currentTimeMillis();
 
   public GamePanel(Context context) {
     super(context);
-    init(context);
+    activity = (Activity)context;
+    initGame();
   }
 
-  private void init(Context context) {
+  private void initGame() {
     getHolder().addCallback(this); // Register self as call back
-    prefs = context.getSharedPreferences("ToxicSnakePrefs", 0);
+    SharedPreferences prefs = activity.getSharedPreferences("ToxicSnakePrefs", 0);
     hScore = prefs.getInt("HighScore", 0);
-  }
-
-  public GamePanel(Context context, AttributeSet attrSet) {
-    super(context, attrSet);
-    init(context);
   }
 
   @Override
@@ -229,7 +226,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     elts.draw(canvas, sqSize, x0, y0);
     bgPaint.setColor(Color.GREEN);
     snake.draw(canvas, sqSize, x0, y0, bgPaint);
-    if (mode == Mode.DEMO || mode == Mode.CRASHED) drawMenu(canvas);
+    if (mode == Mode.CRASHED || mode == Mode.DEMO) drawMenu(canvas);
     else {
       bgPaint.setColor(Color.WHITE);
       String statusStr = (mode == Mode.PAUSED) ? "PAUSED": "PAUSE";
@@ -244,16 +241,12 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     float xMax = x0 + width * sqSize;
     bgPaint.setColor(Color.DKGRAY);
     bgPaint.setAlpha(200);
-    canvas.drawRect(x0+20, y0+20, xMax-20, yMax-20, bgPaint);
+    canvas.drawRect(x0+20, y0+20, xMax-20, y0 + 150, bgPaint);
     bgPaint.setColor(Color.WHITE);
+    canvas.drawText("GAME OVER!", x0+25, y0+50, bgPaint);
     if (lScore > 0 && mode != Mode.DEMO)
       canvas.drawText(String.format("Last Score:   %03d", lScore), x0+25, y0+75, bgPaint);
     canvas.drawText(String.format("High Score:   %03d", hScore), x0+25, y0+100, bgPaint);
-    canvas.drawText("Instructions:", x0 + 25, y0 + 200, bgPaint);
-    canvas.drawText("- Swipe/Tap to turn", x0 + 25, y0 + 225, bgPaint);
-    canvas.drawText("- Eat the blue dots", x0 + 25, y0 + 250, bgPaint);
-    canvas.drawText("- Avoid the red ones", x0 + 25, y0 + 275, bgPaint);
-    canvas.drawText("- Tap to start", x0 + 25, y0 + 325, bgPaint);
     bgPaint.setAlpha(255);
   }
 
@@ -285,6 +278,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
       if (mode == Mode.PLAYING) lScore = score;
       if (score > hScore && mode == Mode.PLAYING) {
         hScore = score;
+        SharedPreferences prefs = activity.getSharedPreferences("ToxicSnakePrefs", 0);
         SharedPreferences.Editor edit = prefs.edit();
         edit.putInt("HighScore", score);
         edit.commit();
@@ -304,8 +298,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   public void onTap(float x, float y) {
     if (mode == Mode.PAUSED) mode = Mode.PLAYING;
-    else if (mode == Mode.CRASHED || mode == Mode.DEMO)
-      startGame(Mode.PLAYING);
+    else if (mode == Mode.CRASHED || mode == Mode.DEMO) activity.finish();
     else if (y < y0) mode = Mode.PAUSED;
     else {
       boolean isVertical = snake.prevDir == Direction.DOWN || snake.prevDir == Direction.UP;
