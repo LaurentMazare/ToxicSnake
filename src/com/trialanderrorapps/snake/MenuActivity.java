@@ -4,8 +4,7 @@ import com.trialanderrorapps.snake.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.*;
 import android.os.Bundle;
 import android.view.*;
 import android.view.View.OnClickListener;
@@ -23,6 +22,7 @@ public class MenuActivity extends Activity implements OnClickListener {
     ((TextView)findViewById(R.id.bResume)).setOnClickListener(this);
     if (savedGameData == null)
       ((TextView)findViewById(R.id.bResume)).setEnabled(false);
+    refreshHighScore();
   }
 
   @Override
@@ -53,5 +53,14 @@ public class MenuActivity extends Activity implements OnClickListener {
         ((TextView)findViewById(R.id.bResume)).setEnabled(false);
       }
     }
+    refreshHighScore();
+  }
+
+  private void refreshHighScore() {
+    SharedPreferences prefs = getSharedPreferences("ToxicSnakePrefs", 0);
+    int hScore = prefs.getInt("HighScore", 0);
+    TextView tv = (TextView)findViewById(R.id.bHighScore);
+    tv.setText(String.format("HIGH SCORE: %02d", hScore));
+    tv.setEnabled(false);
   }
 }

@@ -161,7 +161,6 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
   Paint bgPaint = new Paint();
   MainThread mainThread = null;
   int lScore = 0;
-  int hScore = 0;
   float sqSize, x0, y0;
   private static final int width = 22;
   private static final int height = 30;
@@ -176,8 +175,6 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
 
   private void initGame() {
     getHolder().addCallback(this); // Register self as call back
-    SharedPreferences prefs = activity.getSharedPreferences("ToxicSnakePrefs", 0);
-    hScore = prefs.getInt("HighScore", 0);
   }
 
   @Override
@@ -231,8 +228,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
       bgPaint.setColor(Color.WHITE);
       String statusStr = (gd.mode == Mode.PAUSED) ? "PAUSED": "PAUSE";
       canvas.drawText(statusStr, x0 + 5, y0 - 5, bgPaint);
-      String scoreStr = String.format("%03d/%03d", gd.score, hScore);
-      canvas.drawText(scoreStr, xMax - 90, y0 - 5, bgPaint);
+      String scoreStr = String.format("SCORE: %02d", gd.score);
+      canvas.drawText(scoreStr, xMax - 120, y0 - 5, bgPaint);
     }
   }
 
@@ -241,12 +238,11 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     float xMax = x0 + width * sqSize;
     bgPaint.setColor(Color.DKGRAY);
     bgPaint.setAlpha(200);
-    canvas.drawRect(x0+20, y0+20, xMax-20, y0 + 150, bgPaint);
+    canvas.drawRect(x0+20, y0+20, xMax-20, y0 + 100, bgPaint);
     bgPaint.setColor(Color.WHITE);
     canvas.drawText("GAME OVER!", x0+25, y0+50, bgPaint);
     if (lScore > 0 && gd.mode != Mode.DEMO)
       canvas.drawText(String.format("Last Score:   %03d", lScore), x0+25, y0+75, bgPaint);
-    canvas.drawText(String.format("High Score:   %03d", hScore), x0+25, y0+100, bgPaint);
     bgPaint.setAlpha(255);
   }
 
@@ -276,9 +272,10 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback {
     }
     else {
       if (gd.mode == Mode.PLAYING) lScore = gd.score;
+      SharedPreferences prefs = activity.getSharedPreferences("ToxicSnakePrefs", 0);
+      int hScore = prefs.getInt("HighScore", 0);
       if (gd.score > hScore && gd.mode == Mode.PLAYING) {
         hScore = gd.score;
-        SharedPreferences prefs = activity.getSharedPreferences("ToxicSnakePrefs", 0);
         SharedPreferences.Editor edit = prefs.edit();
         edit.putInt("HighScore", gd.score);
         edit.commit();

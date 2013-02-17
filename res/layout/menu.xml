@@ -30,7 +30,12 @@
       style="@style/MenuItem"
       android:gravity="right"
       />
-    <TextView android:id="@+id/bQuit"
+    <TextView android:id="@+id/bHighScore"
+      android:text=""
+      style="@style/MenuItem"
+      android:gravity="right"
+      />
+     <TextView android:id="@+id/bQuit"
       android:text="@string/btn_quit"
       style="@style/MenuItem"
       android:gravity="right"
