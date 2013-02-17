@@ -106,11 +106,19 @@ class Elements implements Serializable {
   }
 
   void replaceDiamond(Snake s) {
-    while (true) {
-      diamond.x = 1 + rng.nextInt(width - 2);
-      diamond.y = 1 + rng.nextInt(height - 2);
-      if (!s.contains(diamond)) break;
+    int x = 0, y = 0;
+    boolean ok = false;
+    while (!ok) {
+      ok = true;
+      x = 1 + rng.nextInt(width - 2);
+      y = 1 + rng.nextInt(height - 2);
+      for (Point p: wPoints)
+        if (x == p.x && y == p.y) ok = false;
+      for (Point p: s.points)
+        if (x == p.x && y == p.y) ok = false;
     }
+    diamond.x = x;
+    diamond.y = y;
   }
 
   void draw(Canvas canvas, float sqSize, float x0, float y0) {
