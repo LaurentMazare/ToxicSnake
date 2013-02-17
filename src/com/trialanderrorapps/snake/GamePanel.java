@@ -21,6 +21,7 @@ class Snake implements Serializable {
   LinkedList<Point> points;
   Direction dir;
   Direction prevDir;
+  boolean shouldCrash = false;
 
   int width;
   int height;
@@ -47,6 +48,7 @@ class Snake implements Serializable {
   }
 
   boolean next(LinkedList<Point> wPoints) {
+    boolean shCrash = shouldCrash;
     Point pLast = points.getLast();
     int newX = pLast.x;
     int newY = pLast.y;
@@ -59,14 +61,19 @@ class Snake implements Serializable {
       if (p.x == newX && p.y == newY) hasCrashed = true;
     for (Point p: points)
       if (p.x == newX && p.y == newY) hasCrashed = true;
-    if (!hasCrashed) points.add(new Point(newX, newY));
+    if (!hasCrashed) {
+      points.add(new Point(newX, newY));
+      shouldCrash = false;
+    }
+    else
+      shouldCrash = true;
     prevDir = dir;
-    return hasCrashed;
+    return shCrash && hasCrashed;
   }
 
   Point removeFirst() {
     Point p = points.getFirst();
-    points.removeFirst();
+    if (!shouldCrash) points.removeFirst();
     return p;
   }
 
