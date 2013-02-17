@@ -19,6 +19,13 @@
     android:padding="10px"
     android:layout_weight=".1"
     />
+  <Button android:id="@+id/bResume"
+    android:text="@string/btn_resume"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="10px"
+    android:layout_weight=".1"
+    />
   <Button android:id="@+id/bQuit"
     android:text="@string/btn_quit"
     android:layout_width="fill_parent"

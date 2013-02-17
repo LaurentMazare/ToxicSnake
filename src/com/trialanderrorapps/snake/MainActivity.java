@@ -1,6 +1,7 @@
 package com.trialanderrorapps.snake;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.*;
 import android.view.GestureDetector.*;
@@ -18,11 +19,16 @@ public class MainActivity extends Activity implements OnGestureListener {
     gamePanel = new GamePanel(this);
     setContentView(gamePanel);
     gestureDetector = new GestureDetector(this, this);
+    Intent data = getIntent();
+    if (data != null && data.hasExtra("GameData")) {
+      gamePanel.gd = (GameData)data.getSerializableExtra("GameData");
+      gamePanel.pause();
+    }
   }
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-      return (gestureDetector.onTouchEvent(event));
+    return (gestureDetector.onTouchEvent(event));
   }
 
   @Override
@@ -58,6 +64,10 @@ public class MainActivity extends Activity implements OnGestureListener {
   }
   @Override
   public void onBackPressed() {
+    Intent data = new Intent();
+    data.putExtra("GameData", gamePanel.gd);
+    setResult(Activity.RESULT_OK, data);
+    super.onBackPressed();
   }
   @Override
   public void onPause() {
